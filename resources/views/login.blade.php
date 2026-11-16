@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tirta — Masuk</title>
+    <title>Tirta Bima</title>
     <!-- Tailwind CSS & Font Awesome -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,7 +12,6 @@
 
     <div class="bg-white rounded-3xl shadow-xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row min-h-[640px]">
         
-        <!-- Sisi Kiri: Branding Tirta Bima Swimming Club -->
         <div class="bg-[#0b2447] text-white p-8 md:p-12 md:w-5/12 flex flex-col justify-between relative overflow-hidden">
             <div>
                 <div class="flex items-center space-x-2 text-lg font-semibold tracking-wide">
