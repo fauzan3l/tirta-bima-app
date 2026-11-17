@@ -10,7 +10,6 @@ Route::get('/', function () {
 });
 
 Route::middleware('guest')->group(function () {
-
     Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('login', [AuthController::class, 'login']);
 
@@ -20,9 +19,10 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    
-    Route::post('/admin/users/store', [AdminController::class, 'storeUser'])->name('admin.users.store');
-    Route::post('/admin/attendance/scan', [AdminController::class, 'scanAttendance'])->name('admin.attendance.scan');
+
+    // Endpoint Admin (Kelola Akun, Scan QR, & Absensi Manual)
+    Route::post('/admin/store-user', [AdminController::class, 'storeUser'])->name('admin.storeUser');
+    Route::post('/admin/scan-attendance', [AdminController::class, 'scanAttendance'])->name('admin.scanAttendance');
+    Route::post('/admin/manual-attendance', [AdminController::class, 'manualAttendance'])->name('admin.manualAttendance');
 });

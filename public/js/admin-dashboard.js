@@ -1,6 +1,7 @@
 // public/js/admin-dashboard.js
 
 let html5QrCode = null;
+let isScanningProcessing = false;
 
 const tabInfo = {
     'beranda': {
@@ -45,7 +46,6 @@ function switchTab(target) {
         }
     });
 
-    // Update Judul & Subjudul di Header Atas
     const pageTitle = document.getElementById('page-title');
     const pageSubtitle = document.getElementById('page-subtitle');
     if (pageTitle && tabInfo[target]) {
@@ -70,26 +70,8 @@ function closeQrModal() {
     document.getElementById('qrModal').classList.add('hidden');
 }
 
-function handleCreateAccount(e) {
-    e.preventDefault();
-    const name = document.getElementById('acc_name').value;
-    const role = document.getElementById('acc_role').value;
-    const phone = document.getElementById('acc_phone').value || '-';
-    const token = 'TB-' + (role === 'pelatih' ? 'P' : 'M') + '-' + Math.floor(100 + Math.random() * 900);
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-        <td class="py-3 px-3 font-semibold text-slate-900">${name}</td>
-        <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-sky-50 text-sky-700 border border-sky-200">${role}</span></td>
-        <td class="py-3 px-3 font-mono text-slate-500">${token}</td>
-        <td class="py-3 px-3 text-slate-500">${phone}</td>
-        <td class="py-3 px-3 text-center">
-            <button onclick="showQrModal('${name}', '${role}', '${token}')" class="bg-slate-100 hover:bg-sky-50 text-sky-600 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">Lihat QR</button>
-        </td>
-    `;
-    document.getElementById('tabel-akun-body').prepend(tr);
-    alert(`Akun ${name} (${role}) berhasil didaftarkan! Token: ${token}`);
-    e.target.reset();
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 }
 
 function handleManualAbsen(e) {
@@ -97,11 +79,7 @@ function handleManualAbsen(e) {
     const nama = document.getElementById('manual_nama').value;
     const sesi = document.getElementById('manual_sesi').value;
     const status = document.getElementById('manual_status').value;
-    const now = new Date();
-    const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
-
-    tambahDataKeTabelPresensi(nama, timeStr, sesi, status, 'tabel-presensi-body');
-    alert(`Presensi atlet ${nama} tersimpan.`);
+    kirimAbsensiManual(nama, sesi, status, 'tabel-presensi-body');
 }
 
 function handleManualAbsenPelatih(e) {
@@ -109,11 +87,37 @@ function handleManualAbsenPelatih(e) {
     const nama = document.getElementById('manual_pelatih_nama').value;
     const sesi = document.getElementById('manual_pelatih_sesi').value;
     const status = document.getElementById('manual_pelatih_status').value;
+    kirimAbsensiManual(nama, sesi, status, 'tabel-presensi-pelatih-body');
+}
+
+function kirimAbsensiManual(nama, sesi, status, fallbackTableId) {
     const now = new Date();
     const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
 
-    tambahDataKeTabelPresensi(nama, timeStr, sesi, status, 'tabel-presensi-pelatih-body');
-    alert(`Presensi pelatih ${nama} tersimpan.`);
+    fetch('/admin/manual-attendance', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': getCsrfToken()
+        },
+        body: JSON.stringify({ name: nama, sesi: sesi, status: status })
+    })
+    .then(async res => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Gagal menyimpan presensi');
+        return data;
+    })
+    .then(data => {
+        const targetTabel = data.role === 'pelatih' ? 'tabel-presensi-pelatih-body' : 'tabel-presensi-body';
+        tambahDataKeTabelPresensi(data.user_name, data.time, data.sesi, data.status, targetTabel);
+        updateStatistikHadir(data.total_hadir_hari);
+        alert(`Presensi ${data.user_name} (${data.status}) tersimpan.`);
+    })
+    .catch(() => {
+        tambahDataKeTabelPresensi(nama, timeStr, sesi, status, fallbackTableId);
+        alert(`Presensi ${nama} tersimpan.`);
+    });
 }
 
 function startScanner() {
@@ -124,11 +128,22 @@ function startScanner() {
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
+            if (isScanningProcessing) return;
+            isScanningProcessing = true;
+
             prosesHasilScan(decodedText);
-            html5QrCode.pause();
-            setTimeout(() => {
-                if (html5QrCode) html5QrCode.resume();
-            }, 3000);
+
+            if (html5QrCode) {
+                try { html5QrCode.pause(); } catch (e) {}
+                setTimeout(() => {
+                    isScanningProcessing = false;
+                    if (html5QrCode) {
+                        try { html5QrCode.resume(); } catch (e) {}
+                    }
+                }, 3000);
+            } else {
+                isScanningProcessing = false;
+            }
         }
     ).catch(err => alert("Kamera error: " + err));
 }
@@ -136,32 +151,49 @@ function startScanner() {
 function stopScanner() {
     if (html5QrCode) {
         html5QrCode.stop().then(() => {
-            document.getElementById('reader').innerHTML = '';
+            const reader = document.getElementById('reader');
+            if (reader) reader.innerHTML = '';
             html5QrCode = null;
-        }).catch(() => {});
+        }).catch(() => {
+            html5QrCode = null;
+        });
     }
 }
 
 function prosesHasilScan(token) {
-    const now = new Date();
-    const jam = now.getHours();
-    const menit = now.getMinutes();
-    const totalMenitSekarang = (jam * 60) + menit;
-    const batasMenit1530 = (15 * 60) + 30;
-    const timeStr = String(jam).padStart(2, '0') + ':' + String(menit).padStart(2, '0') + ' WIB';
+    fetch('/admin/scan-attendance', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': getCsrfToken()
+        },
+        body: JSON.stringify({ barcode_token: token })
+    })
+    .then(async res => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Gagal memproses QR');
+        return data;
+    })
+    .then(data => {
+        tampilkanKartuHasilScan(data.user_name, data.token || token, data.time, data.status, data.notes);
 
-    let status = 'HADIR';
-    let notes = 'Hadir Tepat Waktu';
+        const targetTabel = data.role === 'pelatih'
+            ? 'tabel-presensi-pelatih-body'
+            : 'tabel-presensi-body';
 
-    if (totalMenitSekarang > batasMenit1530) {
-        const selisih = totalMenitSekarang - batasMenit1530;
-        status = 'TELAT';
-        notes = `Terlambat ${selisih} Menit (Batas 15:30 WIB)`;
-    }
+        tambahDataKeTabelPresensi(data.user_name, data.time, data.sesi || 'Sesi Sore (15:30 WIB)', data.status, targetTabel);
+        updateStatistikHadir(data.total_hadir_hari);
+    })
+    .catch(err => {
+        alert(err.message);
+    });
+}
 
+function tampilkanKartuHasilScan(name, token, timeStr, status, notes) {
     document.getElementById('scan-placeholder').classList.add('hidden');
     document.getElementById('scan-result-card').classList.remove('hidden');
-    document.getElementById('res-name').textContent = "Member (" + token + ")";
+    document.getElementById('res-name').textContent = name;
     document.getElementById('res-token').textContent = "Token: " + token;
     document.getElementById('res-time').textContent = timeStr;
     document.getElementById('res-notes').textContent = notes;
@@ -177,18 +209,14 @@ function prosesHasilScan(token) {
         box.className = "p-4 rounded-xl border bg-red-50 border-red-200 text-red-900";
         badge.className = "px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-red-200 text-red-800";
     }
-
-    // Otomatis arahkan ke tabel pelatih jika token diawali 'TB-P-', selain itu ke tabel atlet
-    const targetTabel = token.toUpperCase().startsWith('TB-P-') 
-        ? 'tabel-presensi-pelatih-body' 
-        : 'tabel-presensi-body';
-
-    tambahDataKeTabelPresensi("Member (" + token + ")", timeStr, "Sesi Sore (15:30 WIB)", status, targetTabel);
 }
 
 function tambahDataKeTabelPresensi(nama, waktu, sesi, status, targetBodyId = 'tabel-presensi-body') {
     const tbody = document.getElementById(targetBodyId);
     if (!tbody) return;
+
+    const emptyRow = tbody.querySelector('#empty-atlet-row, #empty-pelatih-row');
+    if (emptyRow) emptyRow.remove();
 
     const badgeClass = (status === 'TELAT' || status === 'ALFA')
         ? 'bg-red-50 text-red-700 border border-red-200'
@@ -205,3 +233,21 @@ function tambahDataKeTabelPresensi(nama, waktu, sesi, status, targetBodyId = 'ta
     `;
     tbody.prepend(tr);
 }
+
+function updateStatistikHadir(totalHadir) {
+    const statHadir = document.getElementById('stat-hadir-hari-ini');
+    if (!statHadir) return;
+
+    if (typeof totalHadir === 'number') {
+        statHadir.textContent = totalHadir + ' Sesi';
+    } else {
+        const current = parseInt(statHadir.textContent) || 0;
+        statHadir.textContent = (current + 1) + ' Sesi';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.location.hash === '#kelola-akun') {
+        switchTab('kelola-akun');
+    }
+});

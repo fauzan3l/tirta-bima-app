@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Tirta Bima — Dashboard Admin</title>
     
     <!-- Tailwind CSS & Font Awesome -->
@@ -10,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Custom CSS Terpisah -->
-    <link rel="stylesheet" href="{{ asset('css/admin-dashboard.css') }}">
+    <link rel="stylesheet" href="/css/admin-dashboard.css">
     
     <!-- Library QR Scanner -->
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -123,7 +124,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-[11px] font-semibold text-slate-500 uppercase">Total Atlet</p>
-                                <h3 class="text-2xl font-bold text-slate-900 mt-1">{{ count($athletes ?? []) > 0 ? count($athletes) : '48' }} Atlet</h3>
+                                <h3 id="stat-total-atlet" class="text-2xl font-bold text-slate-900 mt-1">{{ ($athletes ?? collect())->count() }} Atlet</h3>
                             </div>
                             <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
                                 <i class="fa-solid fa-users"></i>
@@ -136,7 +137,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-[11px] font-semibold text-slate-500 uppercase">Hadir Hari Ini</p>
-                                <h3 class="text-2xl font-bold text-emerald-600 mt-1">42 Sesi</h3>
+                                <h3 id="stat-hadir-hari-ini" class="text-2xl font-bold text-emerald-600 mt-1">{{ $hadirHariIni ?? 0 }} Sesi</h3>
                             </div>
                             <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                                 <i class="fa-solid fa-clipboard-check"></i>
@@ -149,7 +150,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-[11px] font-semibold text-slate-500 uppercase">Total Pelatih</p>
-                                <h3 class="text-2xl font-bold text-slate-900 mt-1">{{ count($coaches ?? []) > 0 ? count($coaches) : '6' }} Orang</h3>
+                                <h3 id="stat-total-pelatih" class="text-2xl font-bold text-slate-900 mt-1">{{ ($coaches ?? collect())->count() }} Orang</h3>
                             </div>
                             <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
                                 <i class="fa-solid fa-user-tie"></i>
@@ -184,12 +185,9 @@
                             <label class="block font-semibold text-slate-700 mb-1">Pilih Atlet</label>
                             <select id="manual_nama" required class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
                                 <option value="">-- Pilih Atlet --</option>
-                                @forelse($athletes ?? [] as $athlete)
+                                @foreach($athletes ?? [] as $athlete)
                                     <option value="{{ $athlete->name }}">{{ $athlete->name }}</option>
-                                @empty
-                                    <option value="Dimas Anggara">Dimas Anggara</option>
-                                    <option value="Nadia Lestari">Nadia Lestari</option>
-                                @endforelse
+                                @endforeach
                             </select>
                         </div>
                         <div>
@@ -230,12 +228,26 @@
                                 </tr>
                             </thead>
                             <tbody id="tabel-presensi-body" class="divide-y divide-slate-100 text-slate-700">
-                                <tr>
-                                    <td class="py-3 px-3 font-semibold text-slate-900">Dimas Anggara</td>
-                                    <td class="py-3 px-3 text-slate-500">15:20 WIB</td>
-                                    <td class="py-3 px-3">Sesi Sore (15:30 WIB)</td>
-                                    <td class="py-3 px-3 text-center"><span class="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">HADIR</span></td>
-                                </tr>
+                                @forelse($athleteAttendances ?? [] as $att)
+                                    @php
+                                        $st = strtoupper($att->status);
+                                        $badgeClass = match($st) {
+                                            'HADIR' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                                            'TELAT', 'ALFA' => 'bg-red-50 text-red-700 border-red-200',
+                                            default => 'bg-amber-50 text-amber-700 border-amber-200',
+                                        };
+                                    @endphp
+                                    <tr>
+                                        <td class="py-3 px-3 font-semibold text-slate-900">{{ $att->user->name ?? '-' }}</td>
+                                        <td class="py-3 px-3 text-slate-500">{{ substr($att->time, 0, 5) }} WIB</td>
+                                        <td class="py-3 px-3">{{ $att->session_name ?? 'Sesi Sore (15:30 WIB)' }}</td>
+                                        <td class="py-3 px-3 text-center"><span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border {{ $badgeClass }}">{{ $st }}</span></td>
+                                    </tr>
+                                @empty
+                                    <tr id="empty-atlet-row">
+                                        <td colspan="4" class="py-6 text-center text-slate-400">Belum ada atlet yang melakukan presensi hari ini.</td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -253,12 +265,9 @@
                             <label class="block font-semibold text-slate-700 mb-1">Pilih Pelatih</label>
                             <select id="manual_pelatih_nama" required class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
                                 <option value="">-- Pilih Pelatih --</option>
-                                @forelse($coaches ?? [] as $coach)
+                                @foreach($coaches ?? [] as $coach)
                                     <option value="{{ $coach->name }}">{{ $coach->name }}</option>
-                                @empty
-                                    <option value="Coach Bima">Coach Bima</option>
-                                    <option value="Coach Rina">Coach Rina</option>
-                                @endforelse
+                                @endforeach
                             </select>
                         </div>
                         <div>
@@ -299,12 +308,26 @@
                                 </tr>
                             </thead>
                             <tbody id="tabel-presensi-pelatih-body" class="divide-y divide-slate-100 text-slate-700">
-                                <tr>
-                                    <td class="py-3 px-3 font-semibold text-slate-900">Coach Bima</td>
-                                    <td class="py-3 px-3 text-slate-500">15:15 WIB</td>
-                                    <td class="py-3 px-3">Sesi Sore (15:30 WIB)</td>
-                                    <td class="py-3 px-3 text-center"><span class="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">HADIR</span></td>
-                                </tr>
+                                @forelse($coachAttendances ?? [] as $att)
+                                    @php
+                                        $st = strtoupper($att->status);
+                                        $badgeClass = match($st) {
+                                            'HADIR' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                                            'TELAT', 'ALFA' => 'bg-red-50 text-red-700 border-red-200',
+                                            default => 'bg-amber-50 text-amber-700 border-amber-200',
+                                        };
+                                    @endphp
+                                    <tr>
+                                        <td class="py-3 px-3 font-semibold text-slate-900">{{ $att->user->name ?? '-' }}</td>
+                                        <td class="py-3 px-3 text-slate-500">{{ substr($att->time, 0, 5) }} WIB</td>
+                                        <td class="py-3 px-3">{{ $att->session_name ?? 'Sesi Sore (15:30 WIB)' }}</td>
+                                        <td class="py-3 px-3 text-center"><span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border {{ $badgeClass }}">{{ $st }}</span></td>
+                                    </tr>
+                                @empty
+                                    <tr id="empty-pelatih-row">
+                                        <td colspan="4" class="py-6 text-center text-slate-400">Belum ada pelatih yang melakukan presensi hari ini.</td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -364,36 +387,72 @@
 
             <!-- TAB 5: KELOLA AKUN -->
             <section id="tab-kelola-akun" class="space-y-6 hidden">
+                @if(session('success'))
+                    <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl text-xs flex items-center space-x-2">
+                        <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+                        <span class="font-semibold">{{ session('success') }}</span>
+                    </div>
+                @endif
+
+                @if($errors->any())
+                    <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-2xl text-xs space-y-1">
+                        <p class="font-bold">Gagal mendaftarkan akun:</p>
+                        <ul class="list-disc list-inside text-[11px]">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                     <h3 class="text-base font-bold text-slate-900 mb-1">Daftarkan Akun Anggota Baru</h3>
-                    <p class="text-xs text-slate-500 mb-4">Sistem otomatis membuatkan token Barcode QR.</p>
+                    <p class="text-xs text-slate-500 mb-4">Sistem otomatis membuatkan token Barcode QR dan menyimpannya ke database.</p>
 
-                    <form onsubmit="handleCreateAccount(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+                    <form action="{{ route('admin.storeUser') }}" method="POST"
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+                        @csrf
+
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap</label>
-                            <input type="text" id="acc_name" required placeholder="Nama anggota" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                            <input type="text" name="name" value="{{ old('name') }}" required
+                                placeholder="Nama anggota"
+                                class="w-full px-3 py-2 border border-slate-300 rounded-xl">
                         </div>
+
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Email</label>
-                            <input type="email" id="acc_email" required placeholder="email@tirta.com" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                            <input type="email" name="email" value="{{ old('email') }}" required
+                                placeholder="email@tirta.com"
+                                class="w-full px-3 py-2 border border-slate-300 rounded-xl">
                         </div>
+
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">No. WhatsApp</label>
-                            <input type="text" id="acc_phone" placeholder="08xxxxxxxxxx" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                            <input type="text" name="phone" value="{{ old('phone') }}"
+                                placeholder="08xxxxxxxxxx"
+                                class="w-full px-3 py-2 border border-slate-300 rounded-xl">
                         </div>
+
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Role</label>
-                            <select id="acc_role" required class="w-full px-3 py-2 border border-slate-300 rounded-xl">
-                                <option value="murid">Atlet (Murid)</option>
-                                <option value="pelatih">Pelatih (Coach)</option>
+                            <select name="role" required
+                                class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                                <option value="murid" {{ old('role') === 'murid' ? 'selected' : '' }}>Atlet (Murid)</option>
+                                <option value="pelatih" {{ old('role') === 'pelatih' ? 'selected' : '' }}>Pelatih (Coach)</option>
                             </select>
                         </div>
+
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Password</label>
-                            <input type="password" id="acc_password" required placeholder="Min 6 karakter" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                            <input type="password" name="password" required minlength="6"
+                                placeholder="Min 6 karakter"
+                                class="w-full px-3 py-2 border border-slate-300 rounded-xl">
                         </div>
+
                         <div class="sm:col-span-2 lg:col-span-5 flex justify-end mt-2">
-                            <button type="submit" class="bg-[#0275d8] hover:bg-sky-600 text-white font-semibold px-5 py-2.5 rounded-xl transition">
+                            <button type="submit"
+                                class="bg-[#0275d8] hover:bg-sky-600 text-white font-semibold px-5 py-2.5 rounded-xl transition">
                                 Simpan & Terbitkan QR Code
                             </button>
                         </div>
@@ -421,7 +480,7 @@
                                         <td class="py-3 px-3 font-mono text-slate-500">{{ $u->barcode_token ?? ('TB-'.strtoupper(substr($u->role, 0, 1)).'-'.$u->id) }}</td>
                                         <td class="py-3 px-3 text-slate-500">{{ $u->phone ?? '-' }}</td>
                                         <td class="py-3 px-3 text-center">
-                                            <button onclick="showQrModal('{{ $u->name }}', '{{ $u->role }}', '{{ $u->barcode_token ?? ('TB-'.strtoupper(substr($u->role, 0, 1)).'-'.$u->id) }}')" 
+                                            <button onclick="showQrModal('{{ addslashes($u->name) }}', '{{ $u->role }}', '{{ $u->barcode_token ?? ('TB-'.strtoupper(substr($u->role, 0, 1)).'-'.$u->id) }}')" 
                                                 class="bg-slate-100 hover:bg-sky-50 text-sky-600 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
                                                 Lihat QR
                                             </button>
@@ -429,15 +488,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td class="py-3 px-3 font-semibold text-slate-900">Dimas Anggara</td>
-                                        <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700">murid</span></td>
-                                        <td class="py-3 px-3 font-mono text-slate-500">TB-M-101</td>
-                                        <td class="py-3 px-3 text-slate-500">08123456789</td>
-                                        <td class="py-3 px-3 text-center">
-                                            <button onclick="showQrModal('Dimas Anggara', 'murid', 'TB-M-101')" class="bg-slate-100 hover:bg-sky-50 text-sky-600 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
-                                                Lihat QR
-                                            </button>
-                                        </td>
+                                        <td colspan="5" class="py-6 text-center text-slate-400">Belum ada akun anggota terdaftar.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -466,6 +517,6 @@
     </div>
 
     <!-- JavaScript Terpisah -->
-    <script src="{{ asset('js/admin-dashboard.js') }}"></script>
+    <script src="/js/admin-dashboard.js"></script>
 </body>
 </html>
