@@ -168,6 +168,14 @@
                     </div>
 
                     <div class="mb-4">
+                        <!-- PILIH LENSA KAMERA -->
+                        <div id="wrap-camera-select" class="mb-3 hidden">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Lensa Kamera</label>
+                            <select id="camera-select" onchange="gantiKameraScanner(this.value)"
+                                class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 bg-slate-50">
+                            </select>
+                        </div>
+
                         <div id="qr-reader" class="w-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 min-h-[260px]"></div>
                         <p id="camera-status" class="text-xs text-slate-500 mt-2 text-center">Tekan tombol di bawah untuk menyalakan kamera.</p>
                         <div class="flex items-center justify-center gap-2 mt-3">

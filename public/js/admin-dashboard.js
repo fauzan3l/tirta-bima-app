@@ -79,7 +79,6 @@ function switchAdminTab(target) {
         subtitle.textContent = adminTabInfo[target].subtitle;
     }
 
-    // Tutup sidebar & overlay dulu sebelum menyalakan kamera
     toggleAdminSidebar(false);
 
     if (target === 'scan-qr') {
@@ -152,45 +151,115 @@ function openAdminPresensiModal(roleFilter) {
     openAdminModal('modal-admin-presensi');
 }
 
-function startCameraScanner() {
+function pilihKameraUtama(devices) {
+    const savedId = localStorage.getItem('tb_preferred_camera_id');
+    if (savedId && devices.some(d => d.id === savedId)) {
+        return savedId;
+    }
+
+    const backCameras = devices.filter(d => {
+        const label = (d.label || '').toLowerCase();
+        return label.includes('back') || label.includes('rear') || label.includes('environment');
+    });
+
+    if (backCameras.length > 0) {
+        const mainAndroid = backCameras.find(d => (d.label || '').toLowerCase().includes('camera2 0'));
+        if (mainAndroid) return mainAndroid.id;
+
+        const normalBack = backCameras.find(d => {
+            const label = (d.label || '').toLowerCase();
+            return !label.includes('ultra') &&
+                   !label.includes('0.5') &&
+                   !label.includes('0.6') &&
+                   !label.includes('macro') &&
+                   !label.includes('tele') &&
+                   !label.includes('depth');
+        });
+        if (normalBack) return normalBack.id;
+
+        return backCameras[0].id;
+    }
+
+    return devices[0]?.id || null;
+}
+
+async function startCameraScanner(forcedCameraId = null) {
     const statusEl = document.getElementById('camera-status');
+    const selectWrap = document.getElementById('wrap-camera-select');
+    const selectEl = document.getElementById('camera-select');
+
     if (typeof Html5Qrcode === 'undefined') {
         if (statusEl) statusEl.textContent = 'Library kamera tidak termuat. Gunakan input manual.';
         return;
     }
 
     if (isScanning) return;
+    if (statusEl) statusEl.textContent = 'Mencari kamera utama...';
 
-    if (statusEl) statusEl.textContent = 'Menyalakan kamera...';
-    html5QrCode = new Html5Qrcode('qr-reader');
+    try {
+        const devices = await Html5Qrcode.getCameras();
+        let cameraConfig = { facingMode: 'environment' };
 
-    html5QrCode.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 220, height: 220 } },
-        (decodedText) => {
-            if (!isScanning) return;
-            stopCameraScanner();
-            prosesScanToken(decodedText.trim());
-        },
-        () => {}
-    ).then(() => {
+        if (devices && devices.length > 0) {
+            const selectedId = forcedCameraId || pilihKameraUtama(devices);
+            if (selectedId) {
+                cameraConfig = selectedId;
+            }
+
+            if (selectEl && selectWrap) {
+                selectEl.innerHTML = '';
+                devices.forEach((cam, idx) => {
+                    const opt = document.createElement('option');
+                    opt.value = cam.id;
+                    opt.textContent = cam.label || `Kamera ${idx + 1}`;
+                    if (cam.id === selectedId) opt.selected = true;
+                    selectEl.appendChild(opt);
+                });
+                selectWrap.classList.toggle('hidden', devices.length <= 1);
+            }
+        }
+
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode('qr-reader');
+        }
+
+        await html5QrCode.start(
+            cameraConfig,
+            { fps: 10, qrbox: { width: 220, height: 220 } },
+            (decodedText) => {
+                if (!isScanning) return;
+                stopCameraScanner().then(() => {
+                    prosesScanToken(decodedText.trim());
+                });
+            },
+            () => {}
+        );
+
         isScanning = true;
         if (statusEl) statusEl.textContent = 'Kamera aktif. Arahkan QR / Barcode ke kotak scan.';
-    }).catch(err => {
+    } catch (err) {
         isScanning = false;
         if (statusEl) statusEl.textContent = 'Kamera tidak dapat diakses (' + err + '). Gunakan input manual di bawah.';
-    });
+    }
 }
 
-function stopCameraScanner() {
+async function stopCameraScanner() {
     const statusEl = document.getElementById('camera-status');
     if (html5QrCode && isScanning) {
         isScanning = false;
-        html5QrCode.stop().then(() => {
+        try {
+            await html5QrCode.stop();
             html5QrCode.clear();
             if (statusEl) statusEl.textContent = 'Kamera dimatikan. Tekan "Nyalakan Kamera" untuk mulai scan.';
-        }).catch(() => {});
+        } catch (e) {}
     }
+}
+
+async function gantiKameraScanner(cameraId) {
+    if (!cameraId) return;
+    localStorage.setItem('tb_preferred_camera_id', cameraId);
+    await stopCameraScanner();
+    await startCameraScanner(cameraId);
 }
 
 function toggleFieldKelompok() {
