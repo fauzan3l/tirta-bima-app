@@ -70,6 +70,10 @@
                     <i class="fa-solid fa-qrcode text-sm w-5 text-center text-emerald-400"></i>
                     <span>Scan QR Absensi</span>
                 </button>
+                <button onclick="switchAdminTab('event')" id="btn-admin-event" class="admin-nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-trophy text-sm w-5 text-center text-sky-400"></i>
+                    <span>Daftar Event</span>
+                </button>
                 <button onclick="switchAdminTab('kehadiran-atlet')" id="btn-admin-kehadiran-atlet" class="admin-nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
                     <i class="fa-solid fa-person-swimming text-sm w-5 text-center"></i>
                     <span>Kehadiran Atlet</span>
@@ -78,10 +82,7 @@
                     <i class="fa-solid fa-chalkboard-user text-sm w-5 text-center"></i>
                     <span>Kehadiran Pelatih</span>
                 </button>
-                <button onclick="switchAdminTab('event')" id="btn-admin-event" class="admin-nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
-                    <i class="fa-solid fa-trophy text-sm w-5 text-center text-sky-400"></i>
-                    <span>Daftar Event</span>
-                </button>
+
                 <button onclick="switchAdminTab('akun-pelatih')" id="btn-admin-akun-pelatih" class="admin-nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
                     <i class="fa-solid fa-user-tie text-sm w-5 text-center"></i>
                     <span>Akun Pelatih</span>
