@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans antialiased text-slate-800 flex flex-col md:flex-row">
+<body class="bg-slate-100 min-h-[100dvh] font-sans antialiased text-slate-800 flex flex-col md:flex-row">
 
     <!-- OVERLAY MOBILE -->
     <div id="admin-sidebar-overlay" onclick="toggleAdminSidebar(false)"
@@ -29,14 +29,14 @@
 
     <!-- SIDEBAR ADMIN (DRAWER DI HP, STICKY DI DESKTOP) -->
     <aside id="admin-sidebar"
-        class="fixed inset-y-0 left-0 w-72 bg-[#0b2447] text-white flex flex-col justify-between shrink-0 h-screen overflow-y-auto shadow-xl z-40 transform -translate-x-full transition-transform duration-200 md:translate-x-0 md:sticky md:top-0 md:z-20">
+        class="fixed inset-y-0 left-0 w-72 bg-[#0b2447] text-white flex flex-col justify-between shrink-0 min-h-[100dvh] md:h-screen overflow-y-auto shadow-xl z-40 transform -translate-x-full transition-transform duration-200 md:translate-x-0 md:sticky md:top-0 md:z-20">
         <div>
-            <div class="p-6 border-b border-slate-700/60 flex items-center justify-between">
+            <div class="p-4 sm:p-5 border-b border-slate-700/60 flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <img src="{{ $logoUrl }}" alt="Logo Tirta Bima"
-                        class="w-10 h-10 rounded-xl object-contain bg-white p-1 shrink-0 shadow-sm">
+                        class="w-9 h-9 rounded-xl object-contain bg-white p-1 shrink-0 shadow-sm">
                     <div>
-                        <span class="text-base font-bold tracking-wide block leading-tight">Tirta Bima Swimming Club</span>
+                        <span class="text-sm sm:text-base font-bold tracking-wide block leading-tight">Tirta Bima</span>
                         <span class="text-[10px] uppercase font-semibold text-sky-400 tracking-wider">Admin Panel</span>
                     </div>
                 </div>
@@ -46,14 +46,14 @@
             </div>
 
             <!-- Profil Admin -->
-            <div class="px-6 py-5 border-b border-slate-700/40 bg-white/5">
+            <div class="px-4 sm:px-5 py-3.5 border-b border-slate-700/40 bg-white/5">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-full bg-sky-500/20 border border-sky-400 flex items-center justify-center text-sky-300 font-bold text-sm shrink-0">
+                    <div class="w-9 h-9 rounded-full bg-sky-500/20 border border-sky-400 flex items-center justify-center text-sky-300 font-bold text-sm shrink-0">
                         {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}
                     </div>
                     <div class="overflow-hidden">
                         <p class="text-xs font-semibold text-white truncate">{{ Auth::user()->name ?? 'Administrator' }}</p>
-                        <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                        <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
                             Super Admin
                         </span>
                     </div>
@@ -61,39 +61,39 @@
             </div>
 
             <!-- Menu Sidebar -->
-            <nav class="p-4 space-y-1.5 text-xs font-medium">
-                <button onclick="switchAdminTab('beranda')" id="btn-admin-beranda" class="admin-nav-tab w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition bg-[#0275d8] text-white">
+            <nav class="p-3 sm:p-4 space-y-1 text-xs font-medium">
+                <button onclick="switchAdminTab('beranda')" id="btn-admin-beranda" class="admin-nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition bg-[#0275d8] text-white">
                     <i class="fa-solid fa-table-columns text-sm w-5 text-center"></i>
                     <span>Beranda Admin</span>
                 </button>
-                <button onclick="switchAdminTab('scan-qr')" id="btn-admin-scan-qr" class="admin-nav-tab w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
+                <button onclick="switchAdminTab('scan-qr')" id="btn-admin-scan-qr" class="admin-nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
                     <i class="fa-solid fa-qrcode text-sm w-5 text-center text-emerald-400"></i>
                     <span>Scan QR Absensi</span>
                 </button>
-                <button onclick="switchAdminTab('kehadiran-atlet')" id="btn-admin-kehadiran-atlet" class="admin-nav-tab w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
+                <button onclick="switchAdminTab('kehadiran-atlet')" id="btn-admin-kehadiran-atlet" class="admin-nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
                     <i class="fa-solid fa-person-swimming text-sm w-5 text-center"></i>
                     <span>Kehadiran Atlet</span>
                 </button>
-                <button onclick="switchAdminTab('kehadiran-pelatih')" id="btn-admin-kehadiran-pelatih" class="admin-nav-tab w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
+                <button onclick="switchAdminTab('kehadiran-pelatih')" id="btn-admin-kehadiran-pelatih" class="admin-nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
                     <i class="fa-solid fa-chalkboard-user text-sm w-5 text-center"></i>
                     <span>Kehadiran Pelatih</span>
                 </button>
-                <button onclick="switchAdminTab('event')" id="btn-admin-event" class="admin-nav-tab w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
+                <button onclick="switchAdminTab('event')" id="btn-admin-event" class="admin-nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
                     <i class="fa-solid fa-trophy text-sm w-5 text-center text-sky-400"></i>
                     <span>Daftar Event</span>
                 </button>
-                <button onclick="switchAdminTab('akun-pelatih')" id="btn-admin-akun-pelatih" class="admin-nav-tab w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
+                <button onclick="switchAdminTab('akun-pelatih')" id="btn-admin-akun-pelatih" class="admin-nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
                     <i class="fa-solid fa-user-tie text-sm w-5 text-center"></i>
                     <span>Akun Pelatih</span>
                 </button>
-                <button onclick="switchAdminTab('akun-atlet')" id="btn-admin-akun-atlet" class="admin-nav-tab w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
+                <button onclick="switchAdminTab('akun-atlet')" id="btn-admin-akun-atlet" class="admin-nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
                     <i class="fa-solid fa-users text-sm w-5 text-center"></i>
                     <span>Akun Atlet</span>
                 </button>
             </nav>
         </div>
 
-        <div class="p-4 border-t border-slate-700/60">
+        <div class="p-3 sm:p-4 border-t border-slate-700/60 shrink-0">
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="w-full bg-white/10 hover:bg-red-600/90 text-white px-4 py-2.5 rounded-xl text-xs font-medium transition flex items-center justify-center space-x-2 border border-white/10">
@@ -105,7 +105,7 @@
     </aside>
 
     <!-- KONTEN UTAMA ADMIN -->
-    <div class="flex-1 flex flex-col min-h-screen min-w-0">
+    <div class="flex-1 flex flex-col min-h-[100dvh] min-w-0">
         <header class="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between sticky top-0 z-10 gap-3">
             <div class="flex items-center gap-3 min-w-0">
                 <button type="button" onclick="toggleAdminSidebar(true)"

@@ -13,7 +13,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tirta Bima — Dashboard Atlet</title>
-    <link rel="icon" type="images/jpeg" href="{{ $logoUrl }}">
+    <link rel="icon" type="image/jpeg" href="{{ $logoUrl }}">
 
     <!-- Tailwind CSS & Font Awesome -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -22,7 +22,7 @@
     <!-- Custom CSS Terpisah -->
     <link rel="stylesheet" href="/css/murid-dashboard.css">
 </head>
-<body class="bg-slate-100 min-h-screen font-sans antialiased text-slate-800 flex flex-col md:flex-row">
+<body class="bg-slate-100 min-h-[100dvh] font-sans antialiased text-slate-800 flex flex-col md:flex-row">
 
     <!-- OVERLAY MOBILE -->
     <div id="murid-sidebar-overlay" onclick="toggleMuridSidebar(false)"
@@ -30,14 +30,14 @@
 
     <!-- SIDEBAR MURID (DRAWER DI HP, STICKY DI DESKTOP) -->
     <aside id="murid-sidebar"
-        class="fixed inset-y-0 left-0 w-72 bg-[#0b2447] text-white flex flex-col justify-between shrink-0 h-screen overflow-y-auto shadow-xl z-40 transform -translate-x-full transition-transform duration-200 md:translate-x-0 md:sticky md:top-0 md:z-20">
+        class="fixed inset-y-0 left-0 w-72 bg-[#0b2447] text-white flex flex-col justify-between shrink-0 min-h-[100dvh] md:h-screen overflow-y-auto shadow-xl z-40 transform -translate-x-full transition-transform duration-200 md:translate-x-0 md:sticky md:top-0 md:z-20">
         <div>
-            <div class="p-6 border-b border-slate-700/60 flex items-center justify-between">
+            <div class="p-4 sm:p-5 border-b border-slate-700/60 flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <img src="{{ $logoUrl }}" alt="Logo Tirta Bima"
-                        class="w-10 h-10 rounded-xl object-contain bg-white p-1 shrink-0 shadow-sm">
+                        class="w-9 h-9 rounded-xl object-contain bg-white p-1 shrink-0 shadow-sm">
                     <div>
-                        <span class="text-base font-bold tracking-wide block leading-tight">Tirta Bima</span>
+                        <span class="text-sm sm:text-base font-bold tracking-wide block leading-tight">Tirta Bima</span>
                         <span class="text-[10px] uppercase font-semibold text-sky-400 tracking-wider">Swimming Club</span>
                     </div>
                 </div>
@@ -47,14 +47,14 @@
             </div>
 
             <!-- Profil User -->
-            <div class="px-6 py-5 border-b border-slate-700/40 bg-white/5">
+            <div class="px-4 sm:px-5 py-3.5 border-b border-slate-700/40 bg-white/5">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-full bg-sky-500/20 border border-sky-400 flex items-center justify-center text-sky-300 font-bold text-sm shrink-0">
+                    <div class="w-9 h-9 rounded-full bg-sky-500/20 border border-sky-400 flex items-center justify-center text-sky-300 font-bold text-sm shrink-0">
                         {{ strtoupper(substr(Auth::user()->name ?? 'M', 0, 1)) }}
                     </div>
                     <div class="overflow-hidden">
                         <p class="text-xs font-semibold text-white truncate">{{ Auth::user()->name ?? 'Member Tirta' }}</p>
-                        <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border {{ $isChampions ? 'bg-amber-400/20 text-amber-300 border-amber-400/40' : 'bg-emerald-400/20 text-emerald-300 border-emerald-400/30' }}">
+                        <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border {{ $isChampions ? 'bg-amber-400/20 text-amber-300 border-amber-400/40' : 'bg-emerald-400/20 text-emerald-300 border-emerald-400/30' }}">
                             Kelompok {{ $muridKelompok }}
                         </span>
                     </div>
@@ -62,27 +62,27 @@
             </div>
 
             <!-- Menu Sidebar -->
-            <nav class="p-4 space-y-1.5 text-xs font-medium">
-                <button onclick="switchTab('beranda')" id="btn-beranda" class="nav-tab is-active w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition bg-[#0275d8] text-white">
+            <nav class="p-3 sm:p-4 space-y-1 text-xs font-medium">
+                <button onclick="switchTab('beranda')" id="btn-beranda" class="nav-tab is-active w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition bg-[#0275d8] text-white">
                     <i class="fa-solid fa-table-columns text-sm w-5 text-center"></i>
                     <span>Beranda Dashboard</span>
                 </button>
-                <button onclick="switchTab('kehadiran-atlet')" id="btn-kehadiran-atlet" class="nav-tab is-inactive w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
+                <button onclick="switchTab('kehadiran-atlet')" id="btn-kehadiran-atlet" class="nav-tab is-inactive w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
                     <i class="fa-solid fa-qrcode text-sm w-5 text-center"></i>
                     <span>Kartu QR & Riwayat</span>
                 </button>
-                <button onclick="switchTab('best-time')" id="btn-best-time" class="nav-tab is-inactive w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
+                <button onclick="switchTab('best-time')" id="btn-best-time" class="nav-tab is-inactive w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
                     <i class="fa-solid fa-stopwatch text-sm w-5 text-center text-amber-400"></i>
                     <span>Best Time Saya</span>
                 </button>
-                <button onclick="switchTab('event')" id="btn-event" class="nav-tab is-inactive w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
+                <button onclick="switchTab('event')" id="btn-event" class="nav-tab is-inactive w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-white/10 hover:text-white">
                     <i class="fa-solid fa-trophy text-sm w-5 text-center text-sky-400"></i>
                     <span>Daftar Event</span>
                 </button>
             </nav>
         </div>
 
-        <div class="p-4 border-t border-slate-700/60">
+        <div class="p-3 sm:p-4 border-t border-slate-700/60 shrink-0">
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="w-full bg-white/10 hover:bg-red-600/90 text-white px-4 py-2.5 rounded-xl text-xs font-medium transition flex items-center justify-center space-x-2 border border-white/10">
@@ -94,7 +94,7 @@
     </aside>
 
     <!-- KONTEN UTAMA -->
-    <div class="flex-1 flex flex-col min-h-screen min-w-0">
+    <div class="flex-1 flex flex-col min-h-[100dvh] min-w-0">
         <header class="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between sticky top-0 z-10 gap-3">
             <div class="flex items-center gap-3 min-w-0">
                 <button type="button" onclick="toggleMuridSidebar(true)"
