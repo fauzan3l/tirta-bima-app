@@ -170,7 +170,7 @@
 
                     <div class="mb-4">
                         <div id="qr-reader" class="w-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 min-h-[260px]"></div>
-                        <p id="camera-status" class="text-xs text-slate-500 mt-2 text-center">Tekan tombol di bawah untuk menyalakan kamera.</p>
+                        <p id="camera-status" class="text-xs text-slate-500 mt-2 text-center">Tekan "Nyalakan Kamera" untuk memulai scan QR.</p>
                         <div class="flex items-center justify-center gap-2 mt-3">
                             <button type="button" onclick="startCameraScanner()"
                                 class="inline-flex items-center space-x-1.5 bg-[#0275d8] hover:bg-sky-600 text-white text-xs font-semibold px-4 py-2 rounded-xl transition shadow-sm">
@@ -216,7 +216,7 @@
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
+                        <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
                             <thead>
                                 <tr class="border-b border-slate-100 text-slate-400 uppercase font-semibold">
                                     <th class="pb-3 px-3">Nama Atlet</th>
@@ -236,19 +236,21 @@
                                             default => 'bg-amber-50 text-amber-700 border-amber-200',
                                         };
                                         $kel = $att->user->kelompok ?? 'Learn To Swim';
-                                        $kelClass = $kel === 'Champions'
-                                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                            : 'bg-sky-50 text-sky-700 border-sky-200';
+                                        $kelClass = match($kel) {
+                                            'Champions'    => 'bg-amber-50 text-amber-700 border-amber-200',
+                                            'Intermediate' => 'bg-sky-50 text-sky-700 border-sky-200',
+                                            default        => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                                        };
                                     @endphp
                                     <tr>
                                         <td class="py-3 px-3 font-semibold text-slate-900">{{ $att->user->name ?? '-' }}</td>
                                         <td class="py-3 px-3 text-center">
-                                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border {{ $kelClass }}">{{ $kel }}</span>
+                                            <span class="inline-block px-3 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap {{ $kelClass }}">{{ $kel }}</span>
                                         </td>
                                         <td class="py-3 px-3 text-slate-500">{{ substr($att->time, 0, 5) }} WIB</td>
                                         <td class="py-3 px-3">{{ $att->session_name ?? 'Sesi Sore (15:30 WIB)' }}</td>
                                         <td class="py-3 px-3 text-center">
-                                            <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border {{ $badgeClass }}">{{ $st }}</span>
+                                            <span class="inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold border whitespace-nowrap {{ $badgeClass }}">{{ $st }}</span>
                                         </td>
                                     </tr>
                                 @empty
@@ -278,7 +280,7 @@
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
+                        <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
                             <thead>
                                 <tr class="border-b border-slate-100 text-slate-400 uppercase font-semibold">
                                     <th class="pb-3 px-3">Nama Pelatih</th>
@@ -298,19 +300,21 @@
                                             default => 'bg-amber-50 text-amber-700 border-amber-200',
                                         };
                                         $kel = $att->user->kelompok ?? 'Learn To Swim';
-                                        $kelClass = $kel === 'Champions'
-                                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                            : 'bg-sky-50 text-sky-700 border-sky-200';
+                                        $kelClass = match($kel) {
+                                            'Champions'    => 'bg-amber-50 text-amber-700 border-amber-200',
+                                            'Intermediate' => 'bg-sky-50 text-sky-700 border-sky-200',
+                                            default        => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                                        };
                                     @endphp
                                     <tr>
                                         <td class="py-3 px-3 font-semibold text-slate-900">{{ $att->user->name ?? '-' }}</td>
                                         <td class="py-3 px-3 text-center">
-                                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border {{ $kelClass }}">{{ $kel }}</span>
+                                            <span class="inline-block px-3 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap {{ $kelClass }}">{{ $kel }}</span>
                                         </td>
                                         <td class="py-3 px-3 text-slate-500">{{ substr($att->time, 0, 5) }} WIB</td>
                                         <td class="py-3 px-3">{{ $att->session_name ?? 'Sesi Sore (15:30 WIB)' }}</td>
                                         <td class="py-3 px-3 text-center">
-                                            <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border {{ $badgeClass }}">{{ $st }}</span>
+                                            <span class="inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold border whitespace-nowrap {{ $badgeClass }}">{{ $st }}</span>
                                         </td>
                                     </tr>
                                 @empty
@@ -418,16 +422,18 @@
                                 @forelse($coaches ?? [] as $c)
                                     @php
                                         $kel = $c->kelompok ?? 'Learn To Swim';
-                                        $kelClass = $kel === 'Champions'
-                                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                            : 'bg-sky-50 text-sky-700 border-sky-200';
+                                        $kelClass = match($kel) {
+                                            'Champions'    => 'bg-amber-50 text-amber-700 border-amber-200',
+                                            'Intermediate' => 'bg-sky-50 text-sky-700 border-sky-200',
+                                            default        => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                                        };
                                     @endphp
                                     <tr id="row-user-{{ $c->id }}">
                                         <td class="py-3 px-3 font-semibold text-slate-900">{{ $c->name }}</td>
                                         <td class="py-3 px-3 text-slate-600">{{ $c->email }}</td>
                                         <td class="py-3 px-3 text-slate-600">{{ $c->phone ?? '-' }}</td>
                                         <td class="py-3 px-3 text-center">
-                                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border {{ $kelClass }}">{{ $kel }}</span>
+                                            <span class="inline-block px-3 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap {{ $kelClass }}">{{ $kel }}</span>
                                         </td>
                                         <td class="py-3 px-3 text-center font-mono text-slate-600">{{ $c->barcode_token ?? '-' }}</td>
                                         <td class="py-3 px-3 text-center space-x-1.5">
@@ -485,16 +491,18 @@
                                 @forelse($athletes ?? [] as $a)
                                     @php
                                         $kel = $a->kelompok ?? 'Learn To Swim';
-                                        $kelClass = $kel === 'Champions'
-                                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                            : 'bg-sky-50 text-sky-700 border-sky-200';
+                                        $kelClass = match($kel) {
+                                            'Champions'    => 'bg-amber-50 text-amber-700 border-amber-200',
+                                            'Intermediate' => 'bg-sky-50 text-sky-700 border-sky-200',
+                                            default        => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                                        };
                                     @endphp
                                     <tr id="row-user-{{ $a->id }}">
                                         <td class="py-3 px-3 font-semibold text-slate-900">{{ $a->name }}</td>
                                         <td class="py-3 px-3 text-slate-600">{{ $a->email }}</td>
                                         <td class="py-3 px-3 text-slate-600">{{ $a->phone ?? '-' }}</td>
                                         <td class="py-3 px-3 text-center">
-                                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border {{ $kelClass }}">{{ $kel }}</span>
+                                            <span class="inline-block px-3 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap {{ $kelClass }}">{{ $kel }}</span>
                                         </td>
                                         <td class="py-3 px-3 text-center font-mono text-slate-600">{{ $a->barcode_token ?? '-' }}</td>
                                         <td class="py-3 px-3 text-center space-x-1.5">

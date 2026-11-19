@@ -35,6 +35,16 @@ const adminTabInfo = {
     }
 };
 
+function getKelompokBadgeClass(kelompok) {
+    if (kelompok === 'Champions') {
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+    }
+    if (kelompok === 'Intermediate') {
+        return 'bg-sky-50 text-sky-700 border-sky-200';
+    }
+    return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+}
+
 function toggleAdminSidebar(open) {
     const sidebar = document.getElementById('admin-sidebar');
     const overlay = document.getElementById('admin-sidebar-overlay');
@@ -82,7 +92,7 @@ function switchAdminTab(target) {
     toggleAdminSidebar(false);
 
     if (target === 'scan-qr') {
-        setTimeout(() => startCameraScanner(), 300);
+        setTimeout(() => startCameraScanner(), 250);
     } else {
         stopCameraScanner();
     }
@@ -151,81 +161,55 @@ function openAdminPresensiModal(roleFilter) {
     openAdminModal('modal-admin-presensi');
 }
 
-function pilihKameraUtama(devices) {
-    const backCameras = devices.filter(d => {
-        const label = (d.label || '').toLowerCase();
-        return label.includes('back') || label.includes('rear') || label.includes('environment');
-    });
-
-    if (backCameras.length > 0) {
-        // Prioritas utama: camera 0 facing back / camera2 0 facing back
-        const cam0Back = backCameras.find(d => {
-            const label = (d.label || '').toLowerCase();
-            return label.includes('camera2 0') || label.includes('camera 0');
-        });
-        if (cam0Back) return cam0Back.id;
-
-        // Fallback: kamera belakang biasa (bukan ultra-wide / macro / tele)
-        const normalBack = backCameras.find(d => {
-            const label = (d.label || '').toLowerCase();
-            return !label.includes('ultra') &&
-                   !label.includes('0.5') &&
-                   !label.includes('0.6') &&
-                   !label.includes('macro') &&
-                   !label.includes('tele') &&
-                   !label.includes('depth');
-        });
-        if (normalBack) return normalBack.id;
-
-        return backCameras[0].id;
-    }
-
-    return devices[0]?.id || null;
-}
-
 async function startCameraScanner() {
     const statusEl = document.getElementById('camera-status');
+    const readerEl = document.getElementById('qr-reader');
+
+    if (!readerEl) return;
 
     if (typeof Html5Qrcode === 'undefined') {
-        if (statusEl) statusEl.textContent = 'Library kamera tidak termuat. Gunakan input manual.';
+        if (statusEl) statusEl.textContent = 'Library kamera tidak termuat. Gunakan input token manual / scanner USB di bawah.';
+        return;
+    }
+
+    if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        if (statusEl) statusEl.textContent = 'Kamera membutuhkan koneksi HTTPS. Gunakan input token manual / scanner USB di bawah.';
         return;
     }
 
     if (isScanning) return;
-    if (statusEl) statusEl.textContent = 'Menyalakan kamera utama...';
+    if (statusEl) statusEl.textContent = 'Menyalakan kamera belakang...';
 
     try {
-        const devices = await Html5Qrcode.getCameras();
-        let cameraConfig = { facingMode: 'environment' };
-
-        if (devices && devices.length > 0) {
-            const selectedId = pilihKameraUtama(devices);
-            if (selectedId) {
-                cameraConfig = selectedId;
-            }
+        if (html5QrCode) {
+            try {
+                await html5QrCode.clear();
+            } catch (e) {}
         }
+        html5QrCode = new Html5Qrcode('qr-reader');
 
-        if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode('qr-reader');
+        const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+        const onScanSuccess = (decodedText) => {
+            if (!isScanning) return;
+            stopCameraScanner().then(() => {
+                prosesScanToken(decodedText.trim());
+            });
+        };
+
+        try {
+            await html5QrCode.start({ facingMode: { exact: 'environment' } }, config, onScanSuccess, () => {});
+        } catch (exactErr) {
+            await html5QrCode.start({ facingMode: 'environment' }, config, onScanSuccess, () => {});
         }
-
-        await html5QrCode.start(
-            cameraConfig,
-            { fps: 10, qrbox: { width: 220, height: 220 } },
-            (decodedText) => {
-                if (!isScanning) return;
-                stopCameraScanner().then(() => {
-                    prosesScanToken(decodedText.trim());
-                });
-            },
-            () => {}
-        );
 
         isScanning = true;
-        if (statusEl) statusEl.textContent = 'Kamera aktif. Arahkan QR / Barcode ke kotak scan.';
+        if (statusEl) statusEl.textContent = 'Kamera belakang aktif. Arahkan QR / Barcode ke kotak scan.';
     } catch (err) {
         isScanning = false;
-        if (statusEl) statusEl.textContent = 'Kamera tidak dapat diakses (' + err + '). Gunakan input manual di bawah.';
+        const msg = err && err.message ? err.message : String(err);
+        if (statusEl) {
+            statusEl.textContent = 'Kamera tidak dapat diakses (' + msg + '). Pastikan izin kamera diaktifkan atau gunakan input manual di bawah.';
+        }
     }
 }
 
@@ -235,7 +219,7 @@ async function stopCameraScanner() {
         isScanning = false;
         try {
             await html5QrCode.stop();
-            html5QrCode.clear();
+            await html5QrCode.clear();
             if (statusEl) statusEl.textContent = 'Kamera dimatikan. Tekan "Nyalakan Kamera" untuk mulai scan.';
         } catch (e) {}
     }
@@ -298,9 +282,7 @@ function editAkun(id, name, email, phone, role, kelompok) {
 
 function renderRowUser(u) {
     const kel = u.kelompok || 'Learn To Swim';
-    const kelClass = kel === 'Champions'
-        ? 'bg-amber-50 text-amber-700 border-amber-200'
-        : 'bg-sky-50 text-sky-700 border-sky-200';
+    const kelClass = getKelompokBadgeClass(kel);
 
     const safeName = (u.name || '').replace(/'/g, "\\'");
     const safeEmail = (u.email || '').replace(/'/g, "\\'");
@@ -312,7 +294,7 @@ function renderRowUser(u) {
         <td class="py-3 px-3 text-slate-600">${u.email}</td>
         <td class="py-3 px-3 text-slate-600">${u.phone || '-'}</td>
         <td class="py-3 px-3 text-center">
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border ${kelClass}">${kel}</span>
+            <span class="inline-block px-3 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${kelClass}">${kel}</span>
         </td>
         <td class="py-3 px-3 text-center font-mono text-slate-600">${u.barcode_token || '-'}</td>
         <td class="py-3 px-3 text-center space-x-1.5">
@@ -552,20 +534,18 @@ function appendAttendanceRow(data) {
         : 'bg-emerald-50 text-emerald-700 border-emerald-200';
 
     const kel = data.kelompok || 'Learn To Swim';
-    const kelClass = kel === 'Champions'
-        ? 'bg-amber-50 text-amber-700 border-amber-200'
-        : 'bg-sky-50 text-sky-700 border-sky-200';
+    const kelClass = getKelompokBadgeClass(kel);
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
         <td class="py-3 px-3 font-semibold text-slate-900">${data.user_name}</td>
         <td class="py-3 px-3 text-center">
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border ${kelClass}">${kel}</span>
+            <span class="inline-block px-3 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${kelClass}">${kel}</span>
         </td>
         <td class="py-3 px-3 text-slate-500">${data.time}</td>
         <td class="py-3 px-3">${data.sesi}</td>
         <td class="py-3 px-3 text-center">
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeClass}">${data.status}</span>
+            <span class="inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold border whitespace-nowrap ${badgeClass}">${data.status}</span>
         </td>
     `;
     tbody.prepend(tr);
