@@ -8,182 +8,154 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class AdminController extends Controller
 {
-    // 0. Halaman Utama Dashboard Admin
-    public function index()
-    {
-        $athletes = User::where('role', 'murid')->orderBy('name')->get();
-        $coaches  = User::where('role', 'pelatih')->orderBy('name')->get();
-
-        $today = Carbon::now('Asia/Jakarta')->toDateString();
-
-        // Ambil data absensi Atlet hari ini
-        $athleteAttendances = Attendance::with('user')
-            ->whereHas('user', fn ($q) => $q->where('role', 'murid'))
-            ->whereDate('date', $today)
-            ->orderByDesc('time')
-            ->get();
-
-        // Ambil data absensi Pelatih hari ini
-        $coachAttendances = Attendance::with('user')
-            ->whereHas('user', fn ($q) => $q->where('role', 'pelatih'))
-            ->whereDate('date', $today)
-            ->orderByDesc('time')
-            ->get();
-
-        // Total Hadir / Telat hari ini untuk kartu Beranda Dashboard
-        $hadirHariIni = Attendance::whereDate('date', $today)
-            ->whereIn('status', ['hadir', 'telat', 'HADIR', 'TELAT'])
-            ->count();
-
-        return view('dashboard_admin', compact(
-            'athletes',
-            'coaches',
-            'athleteAttendances',
-            'coachAttendances',
-            'hadirHariIni'
-        ));
-    }
-
-    // 1. Simpan Akun Baru (Atlet atau Pelatih) oleh Admin
     public function storeUser(Request $request)
     {
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
+            'email'    => 'required|email|max:255|unique:users,email',
             'phone'    => 'nullable|string|max:20',
-            'role'     => 'required|in:pelatih,murid',
-            'password' => 'required|min:6',
+            'password' => 'required|string|min:6',
+            'role'     => 'required|in:murid,pelatih,admin',
+            'kelompok' => 'nullable|in:Learn To Swim,Intermediate,Champions',
         ]);
 
-        $token = 'TB-' . strtoupper(substr($validated['role'], 0, 1)) . '-' . Str::random(6);
+        $prefix = match ($validated['role']) {
+            'pelatih' => 'TB-P-',
+            'admin'   => 'TB-A-',
+            default   => 'TB-M-',
+        };
 
-        User::create([
+        $user = User::create([
             'name'              => $validated['name'],
             'email'             => $validated['email'],
-            'phone'             => $validated['phone'],
-            'role'              => $validated['role'],
+            'phone'             => $validated['phone'] ?? null,
             'password'          => Hash::make($validated['password']),
-            'barcode_token'     => $token,
+            'role'              => $validated['role'],
+            'kelompok'          => $validated['role'] === 'admin' ? null : ($validated['kelompok'] ?? 'Learn To Swim'),
+            'barcode_token'     => $prefix . strtoupper(Str::random(6)),
             'terms_accepted_at' => now(),
         ]);
 
-        return redirect()->to(url()->previous() . '#kelola-akun')
-            ->with('success', 'Akun ' . ucfirst($validated['role']) . ' berhasil dibuat beserta QR Code-nya.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Akun ' . ucfirst($user->role) . ' berhasil ditambahkan.',
+            'user'    => $user,
+        ]);
     }
 
-    // 2. Proses Hasil Scan Barcode / QR Code
-    public function scanAttendance(Request $request)
+    public function updateUser(Request $request, $id)
     {
-        $request->validate([
-            'barcode_token' => 'required|string',
-        ]);
-
-        $token = trim($request->barcode_token);
-        $user  = User::where('barcode_token', $token)->first();
-
-        // Fallback jika memakai format TB-M-1 atau TB-P-2
-        if (!$user && preg_match('/^TB-[MP]-(\d+)$/i', $token, $matches)) {
-            $user = User::find($matches[1]);
-        }
-
+        $user = User::find($id);
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Barcode / Akun tidak terdaftar di sistem Tirta Bima!',
+                'message' => 'Akun tidak ditemukan.',
             ], 404);
         }
 
-        $now   = Carbon::now('Asia/Jakarta');
-        $today = $now->toDateString();
-
-        // Cek apakah sudah absen hari ini
-        $alreadyScanned = Attendance::where('user_id', $user->id)
-            ->whereDate('date', $today)
-            ->first();
-
-        if ($alreadyScanned) {
-            return response()->json([
-                'success' => false,
-                'message' => "{$user->name} sudah melakukan absensi hari ini pada " . substr($alreadyScanned->time, 0, 5) . " WIB.",
-            ], 400);
-        }
-
-        // Jam batas: 15:30 WIB
-        $sessionTimeLimit = Carbon::today('Asia/Jakarta')->setTime(15, 30, 0);
-
-        $status = 'hadir';
-        $note   = 'Hadir Tepat Waktu';
-
-        if ($now->greaterThan($sessionTimeLimit)) {
-            $status       = 'telat';
-            $selisihMenit = $sessionTimeLimit->diffInMinutes($now);
-            $note         = "Terlambat {$selisihMenit} menit (Batas 15:30 WIB)";
-        }
-
-        // Catat ke database sesuai kolom tabel attendances
-        Attendance::create([
-            'user_id'      => $user->id,
-            'recorded_by'  => Auth::id(),
-            'date'         => $today,
-            'time'         => $now->format('H:i:s'),
-            'session_name' => 'Sesi Sore (15:30 WIB)',
-            'status'       => $status,
-            'notes'        => $note,
+        $validated = $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone'    => 'nullable|string|max:20',
+            'password' => 'nullable|string|min:6',
+            'role'     => 'required|in:murid,pelatih,admin',
+            'kelompok' => 'nullable|in:Learn To Swim,Intermediate,Champions',
         ]);
 
-        $totalHadirHari = Attendance::whereDate('date', $today)
-            ->whereIn('status', ['hadir', 'telat', 'HADIR', 'TELAT'])
-            ->count();
+        $updateData = [
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
+            'phone'    => $validated['phone'] ?? null,
+            'role'     => $validated['role'],
+            'kelompok' => $validated['role'] === 'admin' ? null : ($validated['kelompok'] ?? 'Learn To Swim'),
+        ];
+
+        if (!empty($validated['password'])) {
+            $updateData['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($updateData);
 
         return response()->json([
-            'success'          => true,
-            'user_name'        => $user->name,
-            'role'             => strtolower($user->role),
-            'token'            => $token,
-            'status'           => strtoupper($status),
-            'notes'            => $note,
-            'sesi'             => 'Sesi Sore (15:30 WIB)',
-            'time'             => $now->format('H:i') . ' WIB',
-            'total_hadir_hari' => $totalHadirHari,
+            'success' => true,
+            'message' => 'Akun ' . $user->name . ' berhasil diperbarui.',
+            'user'    => $user->fresh(),
         ]);
     }
 
-    // 3. Simpan Absensi Manual (Atlet & Pelatih)
-    public function manualAttendance(Request $request)
+    public function deleteUser($id)
     {
-        $request->validate([
-            'name'   => 'required|string',
-            'sesi'   => 'required|string',
-            'status' => 'required|string',
-        ]);
-
-        $user = User::where('name', $request->name)->first();
+        $user = User::find($id);
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data anggota tidak ditemukan di database.',
+                'message' => 'Akun tidak ditemukan.',
             ], 404);
         }
 
-        $now         = Carbon::now('Asia/Jakarta');
-        $today       = $now->toDateString();
-        $statusLower = strtolower($request->status);
+        if ($user->id === Auth::id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak dapat menghapus akun yang sedang digunakan login.',
+            ], 422);
+        }
 
-        Attendance::updateOrCreate(
+        $user->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Akun berhasil dihapus.',
+        ]);
+    }
+
+    public function manualAttendance(Request $request)
+    {
+        $validated = $request->validate([
+            'name'   => 'required|string',
+            'sesi'   => 'nullable|string|max:100',
+            'status' => 'required|string|max:30',
+        ]);
+
+        $user = User::where('name', $validated['name'])->first();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengguna dengan nama tersebut tidak ditemukan.',
+            ], 404);
+        }
+
+        // Validasi jika yang input adalah pelatih, hanya boleh atlet dari kelompoknya sendiri
+        $authUser = Auth::user();
+        if ($authUser && $authUser->role === 'pelatih') {
+            $coachKelompok = $authUser->kelompok ?? 'Learn To Swim';
+            if ($user->role !== 'murid' || ($user->kelompok ?? 'Learn To Swim') !== $coachKelompok) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Atlet tersebut bukan dari kelompok ' . $coachKelompok . '.',
+                ], 403);
+            }
+        }
+
+        $now    = Carbon::now('Asia/Jakarta');
+        $today  = $now->toDateString();
+        $time   = $now->format('H:i:s');
+        $sesi   = $validated['sesi'] ?? 'Sesi Sore (15:30 WIB)';
+        $status = strtoupper($validated['status']);
+
+        $attendance = Attendance::updateOrCreate(
             [
                 'user_id' => $user->id,
                 'date'    => $today,
             ],
             [
-                'recorded_by'  => Auth::id(),
-                'time'         => $now->format('H:i:s'),
-                'session_name' => $request->sesi,
-                'status'       => $statusLower,
-                'notes'        => 'Input manual oleh Administrator',
+                'time'         => $time,
+                'session_name' => $sesi,
+                'status'       => $status,
             ]
         );
 
@@ -194,10 +166,63 @@ class AdminController extends Controller
         return response()->json([
             'success'          => true,
             'user_name'        => $user->name,
-            'role'             => strtolower($user->role),
-            'status'           => strtoupper($statusLower),
-            'sesi'             => $request->sesi,
-            'time'             => $now->format('H:i') . ' WIB',
+            'role'             => $user->role,
+            'kelompok'         => $user->kelompok ?? 'Learn To Swim',
+            'time'             => substr($attendance->time, 0, 5) . ' WIB',
+            'sesi'             => $attendance->session_name,
+            'status'           => strtoupper($attendance->status),
+            'total_hadir_hari' => $totalHadirHari,
+        ]);
+    }
+
+    public function scanAttendance(Request $request)
+    {
+        $token = $request->input('barcode_token') ?? $request->input('token');
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token barcode tidak boleh kosong.',
+            ], 422);
+        }
+
+        $user = User::where('barcode_token', trim($token))->first();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Barcode tidak terdaftar di sistem.',
+            ], 404);
+        }
+
+        $now   = Carbon::now('Asia/Jakarta');
+        $today = $now->toDateString();
+        $time  = $now->format('H:i:s');
+        $sesi  = $now->hour < 12 ? 'Sesi Pagi (06:00 WIB)' : 'Sesi Sore (15:30 WIB)';
+
+        $attendance = Attendance::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'date'    => $today,
+            ],
+            [
+                'time'         => $time,
+                'session_name' => $sesi,
+                'status'       => 'HADIR',
+            ]
+        );
+
+        $totalHadirHari = Attendance::whereDate('date', $today)
+            ->whereIn('status', ['hadir', 'telat', 'HADIR', 'TELAT'])
+            ->count();
+
+        return response()->json([
+            'success'          => true,
+            'message'          => 'Scan berhasil: ' . $user->name . ' tercatat HADIR.',
+            'user_name'        => $user->name,
+            'role'             => $user->role,
+            'kelompok'         => $user->kelompok ?? 'Learn To Swim',
+            'time'             => substr($attendance->time, 0, 5) . ' WIB',
+            'sesi'             => $attendance->session_name,
+            'status'           => 'HADIR',
             'total_hadir_hari' => $totalHadirHari,
         ]);
     }

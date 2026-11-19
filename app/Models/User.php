@@ -10,36 +10,22 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    /**
-     * Atribut yang dapat diisi secara massal (mass assignable).
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'email',
         'phone',
         'password',
         'role',
+        'kelompok',
         'barcode_token',
         'terms_accepted_at',
     ];
 
-    /**
-     * Atribut yang harus disembunyikan saat serialisasi.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Casting tipe data atribut.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -47,5 +33,15 @@ class User extends Authenticatable
             'terms_accepted_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    public function dataAtlet()
+    {
+        return $this->hasOne(DataAtlet::class);
     }
 }

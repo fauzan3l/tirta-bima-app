@@ -1,0 +1,19 @@
+/* public/css/murid-dashboard.css */
+
+.nav-tab {
+    cursor: pointer;
+}
+
+.nav-tab.is-active {
+    background-color: #0275d8;
+    color: #ffffff;
+}
+
+.nav-tab.is-inactive {
+    color: #cbd5e1;
+}
+
+.nav-tab.is-inactive:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
