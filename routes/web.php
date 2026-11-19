@@ -29,7 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/pelatih/store-data-atlet', [DashboardController::class, 'storeDataAtlet'])->name('pelatih.storeDataAtlet');
     Route::delete('/pelatih/data-atlet/{id}', [DashboardController::class, 'deleteDataAtlet'])->name('pelatih.deleteDataAtlet');
 
-    // Endpoint Pelatih Champions (Program Latihan, Best Time & Event)
+    // Endpoint Pelatih Champions & Admin (Program Latihan, Best Time & Event)
     Route::post('/pelatih/store-program', [DashboardController::class, 'storeProgram'])->name('pelatih.storeProgram');
     Route::delete('/pelatih/program/{id}', [DashboardController::class, 'deleteProgram'])->name('pelatih.deleteProgram');
 

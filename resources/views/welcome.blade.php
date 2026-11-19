@@ -1,27 +1,30 @@
+@php
+    $logoUrl = asset('images/logo-tbsc.jpeg');
+@endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tirta — Masuk</title>
+    <title>Tirta Bima — Masuk</title>
+    <link rel="icon" type="image/jpeg" href="{{ $logoUrl }}">
     <!-- Tailwind CSS & Font Awesome -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8 font-sans antialiased text-slate-800">
+<body class="bg-slate-100 flex items-center justify-center min-h-[100dvh] p-4 sm:p-6 lg:p-8 font-sans antialiased text-slate-800">
 
-    <div class="bg-white rounded-3xl shadow-xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row min-h-[640px]">
-        
-        <!-- Sisi Kiri: Branding Tirta Bima Swimming Club -->
-        <div class="bg-[#0b2447] text-white p-8 md:p-12 md:w-5/12 flex flex-col justify-between relative overflow-hidden">
+    <div class="bg-white rounded-3xl shadow-xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row md:min-h-[640px]">
+
+        <!-- Sisi Kiri: Brand & Info Klub (Khusus Mode Web / Desktop) -->
+        <div class="hidden md:flex bg-[#0b2447] text-white p-12 md:w-5/12 flex-col justify-between relative overflow-hidden">
             <div>
-                <div class="flex items-center space-x-2 text-lg font-semibold tracking-wide">
-                    <svg class="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span>Tirta Bima Swimming Club</span>
+                <div class="flex items-center space-x-3 text-lg font-semibold tracking-wide">
+                    <img src="{{ $logoUrl }}" alt="Logo Tirta Bima Swimming Club"
+                        class="w-11 h-11 rounded-xl object-contain bg-white p-1 shrink-0 shadow-sm">
+                    <span class="leading-tight">Tirta Bima Swimming Club</span>
                 </div>
-                
+
                 <div class="mt-12">
                     <span class="text-[11px] font-semibold uppercase tracking-wider text-sky-400">Kolam Renang & Komunitas</span>
                     <h1 class="text-3xl md:text-4xl font-bold mt-2 leading-tight">
@@ -52,12 +55,18 @@
         </div>
 
         <!-- Sisi Kanan: Form Login -->
-        <div class="p-8 md:p-12 md:w-7/12 flex flex-col justify-center">
+        <div class="p-6 sm:p-8 md:p-12 w-full md:w-7/12 flex flex-col justify-center">
             <div class="max-w-md w-full mx-auto">
                 <div class="text-center mb-6">
-                    <span class="text-xs font-bold text-sky-600 uppercase tracking-widest">Masuk ke Tirta</span>
+                    <div class="inline-flex items-center justify-center bg-white rounded-2xl p-2 border border-slate-200 shadow-sm mb-3">
+                        <img src="{{ $logoUrl }}" alt="Logo TBSC"
+                            class="w-16 h-12 sm:w-20 sm:h-14 object-contain">
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-sky-600 uppercase tracking-widest">Masuk ke Tirta</span>
+                    </div>
                     <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 mt-1">Selamat datang kembali.</h2>
-                    <p class="text-sm text-slate-500 mt-1">Masuk untuk merencanakan kunjungan berenang berikutnya.</p>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">Masuk menggunakan akun yang telah didaftarkan oleh admin klub.</p>
                 </div>
 
                 @if ($errors->any())
@@ -96,7 +105,7 @@
                     </div>
 
                     <!-- Ingat Saya & Lupa Kata Sandi -->
-                    <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center justify-between text-xs gap-2">
                         <label class="flex items-center space-x-2 text-slate-600">
                             <input type="checkbox" name="remember" class="rounded border-slate-300 text-sky-600 focus:ring-sky-500">
                             <span>Ingat saya</span>
@@ -113,9 +122,8 @@
                     </button>
                 </form>
 
-                <p class="text-center text-xs text-slate-500 mt-6">
-                    Belum punya akun? 
-                    <a href="{{ route('register') }}" class="text-sky-600 font-semibold hover:underline">Daftar sekarang</a>
+                <p class="text-center text-[11px] text-slate-400 mt-6">
+                    Belum memiliki akun? Silakan hubungi Admin Tirta Bima untuk pembuatan akun.
                 </p>
             </div>
         </div>
