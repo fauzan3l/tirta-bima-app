@@ -5,6 +5,7 @@
     /** @var \Illuminate\Support\Collection<int, \App\Models\Attendance> $coachAttendances */
     /** @var \Illuminate\Support\Collection<int, \App\Models\Event> $events */
     $todayCarbon = \Carbon\Carbon::now('Asia/Jakarta')->startOfDay();
+    $logoUrl = asset('images/logo-tbsc.jpeg');
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -13,6 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Tirta Bima — Dashboard Admin</title>
+    <link rel="icon" type="image/jpeg" href="{{ $logoUrl }}">
 
     <!-- Tailwind CSS, Font Awesome & HTML5 QR Code Scanner -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,11 +33,10 @@
         <div>
             <div class="p-6 border-b border-slate-700/60 flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                    <svg class="w-7 h-7 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
+                    <img src="{{ $logoUrl }}" alt="Logo Tirta Bima"
+                        class="w-10 h-10 rounded-xl object-contain bg-white p-1 shrink-0 shadow-sm">
                     <div>
-                        <span class="text-base font-bold tracking-wide block leading-tight">Tirta Bima</span>
+                        <span class="text-base font-bold tracking-wide block leading-tight">Tirta Bima Swimming Club</span>
                         <span class="text-[10px] uppercase font-semibold text-sky-400 tracking-wider">Admin Panel</span>
                     </div>
                 </div>
@@ -168,14 +169,6 @@
                     </div>
 
                     <div class="mb-4">
-                        <!-- PILIH LENSA KAMERA -->
-                        <div id="wrap-camera-select" class="mb-3 hidden">
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Lensa Kamera</label>
-                            <select id="camera-select" onchange="gantiKameraScanner(this.value)"
-                                class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 bg-slate-50">
-                            </select>
-                        </div>
-
                         <div id="qr-reader" class="w-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 min-h-[260px]"></div>
                         <p id="camera-status" class="text-xs text-slate-500 mt-2 text-center">Tekan tombol di bawah untuk menyalakan kamera.</p>
                         <div class="flex items-center justify-center gap-2 mt-3">

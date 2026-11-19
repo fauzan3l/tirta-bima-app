@@ -5,6 +5,7 @@
     $muridKelompok = $muridKelompok ?? (Auth::user()->kelompok ?? 'Learn To Swim');
     $isChampions   = $muridKelompok === 'Champions';
     $todayCarbon   = \Carbon\Carbon::now('Asia/Jakarta')->startOfDay();
+    $logoUrl       = asset('images/logo-tbsc.jpeg');
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -12,6 +13,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tirta Bima — Dashboard Atlet</title>
+    <link rel="icon" type="images/jpeg" href="{{ $logoUrl }}">
 
     <!-- Tailwind CSS & Font Awesome -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -22,19 +24,26 @@
 </head>
 <body class="bg-slate-100 min-h-screen font-sans antialiased text-slate-800 flex flex-col md:flex-row">
 
-    <!-- SIDEBAR MURID (STICKY) -->
-    <aside class="w-full md:w-72 bg-[#0b2447] text-white flex flex-col justify-between shrink-0 md:h-screen md:sticky md:top-0 overflow-y-auto shadow-xl z-20">
+    <!-- OVERLAY MOBILE -->
+    <div id="murid-sidebar-overlay" onclick="toggleMuridSidebar(false)"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-30 hidden md:hidden"></div>
+
+    <!-- SIDEBAR MURID (DRAWER DI HP, STICKY DI DESKTOP) -->
+    <aside id="murid-sidebar"
+        class="fixed inset-y-0 left-0 w-72 bg-[#0b2447] text-white flex flex-col justify-between shrink-0 h-screen overflow-y-auto shadow-xl z-40 transform -translate-x-full transition-transform duration-200 md:translate-x-0 md:sticky md:top-0 md:z-20">
         <div>
-            <div class="p-6 border-b border-slate-700/60">
+            <div class="p-6 border-b border-slate-700/60 flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                    <svg class="w-7 h-7 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
+                    <img src="{{ $logoUrl }}" alt="Logo Tirta Bima"
+                        class="w-10 h-10 rounded-xl object-contain bg-white p-1 shrink-0 shadow-sm">
                     <div>
                         <span class="text-base font-bold tracking-wide block leading-tight">Tirta Bima</span>
                         <span class="text-[10px] uppercase font-semibold text-sky-400 tracking-wider">Swimming Club</span>
                     </div>
                 </div>
+                <button type="button" onclick="toggleMuridSidebar(false)" class="md:hidden text-slate-300 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
 
             <!-- Profil User -->
@@ -86,17 +95,23 @@
 
     <!-- KONTEN UTAMA -->
     <div class="flex-1 flex flex-col min-h-screen min-w-0">
-        <header class="bg-white border-b border-slate-200 px-6 lg:px-8 py-4 flex items-center justify-between sticky top-0 z-10">
-            <div>
-                <h1 id="page-title" class="text-lg font-bold text-slate-900">Beranda Saya</h1>
-                <p id="page-subtitle" class="text-xs text-slate-500">Ringkasan aktivitas dan presensi latihan</p>
+        <header class="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between sticky top-0 z-10 gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <button type="button" onclick="toggleMuridSidebar(true)"
+                    class="md:hidden shrink-0 w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="min-w-0">
+                    <h1 id="page-title" class="text-lg font-bold text-slate-900 truncate">Beranda Saya</h1>
+                    <p id="page-subtitle" class="text-xs text-slate-500 truncate">Ringkasan aktivitas dan presensi latihan</p>
+                </div>
             </div>
-            <div class="text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+            <div class="shrink-0 text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
                 <i class="fa-regular fa-calendar-check text-sky-600 mr-1"></i> {{ $formattedDate ?? date('d F Y') }}
             </div>
         </header>
 
-        <main class="p-6 lg:p-8 flex-1 space-y-6">
+        <main class="p-4 sm:p-6 lg:p-8 flex-1 space-y-6">
             <!-- TAB 1: BERANDA -->
             <section id="tab-beranda" class="dashboard-panel space-y-6">
                 <div class="bg-[#0b2447] text-white rounded-3xl p-8 relative overflow-hidden shadow-lg">

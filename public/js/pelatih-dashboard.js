@@ -29,6 +29,20 @@ const pelatihTabInfo = {
     }
 };
 
+function togglePelatihSidebar(open) {
+    const sidebar = document.getElementById('pelatih-sidebar');
+    const overlay = document.getElementById('pelatih-sidebar-overlay');
+    if (!sidebar || !overlay) return;
+
+    if (open) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    }
+}
+
 function switchTab(target) {
     const targetSec = document.getElementById('tab-' + target);
     const targetBtn = document.getElementById('btn-' + target);
@@ -63,6 +77,8 @@ function switchTab(target) {
         pageTitle.textContent = pelatihTabInfo[target].title;
         pageSubtitle.textContent = pelatihTabInfo[target].subtitle;
     }
+
+    togglePelatihSidebar(false);
 }
 
 function bukaKalenderTanggal() {

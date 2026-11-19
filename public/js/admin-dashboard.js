@@ -152,20 +152,20 @@ function openAdminPresensiModal(roleFilter) {
 }
 
 function pilihKameraUtama(devices) {
-    const savedId = localStorage.getItem('tb_preferred_camera_id');
-    if (savedId && devices.some(d => d.id === savedId)) {
-        return savedId;
-    }
-
     const backCameras = devices.filter(d => {
         const label = (d.label || '').toLowerCase();
         return label.includes('back') || label.includes('rear') || label.includes('environment');
     });
 
     if (backCameras.length > 0) {
-        const mainAndroid = backCameras.find(d => (d.label || '').toLowerCase().includes('camera2 0'));
-        if (mainAndroid) return mainAndroid.id;
+        // Prioritas utama: camera 0 facing back / camera2 0 facing back
+        const cam0Back = backCameras.find(d => {
+            const label = (d.label || '').toLowerCase();
+            return label.includes('camera2 0') || label.includes('camera 0');
+        });
+        if (cam0Back) return cam0Back.id;
 
+        // Fallback: kamera belakang biasa (bukan ultra-wide / macro / tele)
         const normalBack = backCameras.find(d => {
             const label = (d.label || '').toLowerCase();
             return !label.includes('ultra') &&
@@ -183,10 +183,8 @@ function pilihKameraUtama(devices) {
     return devices[0]?.id || null;
 }
 
-async function startCameraScanner(forcedCameraId = null) {
+async function startCameraScanner() {
     const statusEl = document.getElementById('camera-status');
-    const selectWrap = document.getElementById('wrap-camera-select');
-    const selectEl = document.getElementById('camera-select');
 
     if (typeof Html5Qrcode === 'undefined') {
         if (statusEl) statusEl.textContent = 'Library kamera tidak termuat. Gunakan input manual.';
@@ -194,28 +192,16 @@ async function startCameraScanner(forcedCameraId = null) {
     }
 
     if (isScanning) return;
-    if (statusEl) statusEl.textContent = 'Mencari kamera utama...';
+    if (statusEl) statusEl.textContent = 'Menyalakan kamera utama...';
 
     try {
         const devices = await Html5Qrcode.getCameras();
         let cameraConfig = { facingMode: 'environment' };
 
         if (devices && devices.length > 0) {
-            const selectedId = forcedCameraId || pilihKameraUtama(devices);
+            const selectedId = pilihKameraUtama(devices);
             if (selectedId) {
                 cameraConfig = selectedId;
-            }
-
-            if (selectEl && selectWrap) {
-                selectEl.innerHTML = '';
-                devices.forEach((cam, idx) => {
-                    const opt = document.createElement('option');
-                    opt.value = cam.id;
-                    opt.textContent = cam.label || `Kamera ${idx + 1}`;
-                    if (cam.id === selectedId) opt.selected = true;
-                    selectEl.appendChild(opt);
-                });
-                selectWrap.classList.toggle('hidden', devices.length <= 1);
             }
         }
 
@@ -253,13 +239,6 @@ async function stopCameraScanner() {
             if (statusEl) statusEl.textContent = 'Kamera dimatikan. Tekan "Nyalakan Kamera" untuk mulai scan.';
         } catch (e) {}
     }
-}
-
-async function gantiKameraScanner(cameraId) {
-    if (!cameraId) return;
-    localStorage.setItem('tb_preferred_camera_id', cameraId);
-    await stopCameraScanner();
-    await startCameraScanner(cameraId);
 }
 
 function toggleFieldKelompok() {

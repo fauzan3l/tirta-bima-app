@@ -19,6 +19,20 @@ const muridTabInfo = {
     }
 };
 
+function toggleMuridSidebar(open) {
+    const sidebar = document.getElementById('murid-sidebar');
+    const overlay = document.getElementById('murid-sidebar-overlay');
+    if (!sidebar || !overlay) return;
+
+    if (open) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    }
+}
+
 function switchTab(target) {
     if (!document.getElementById('tab-' + target)) {
         target = 'beranda';
@@ -48,6 +62,8 @@ function switchTab(target) {
         pageTitle.textContent = muridTabInfo[target].title;
         pageSubtitle.textContent = muridTabInfo[target].subtitle;
     }
+
+    toggleMuridSidebar(false);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

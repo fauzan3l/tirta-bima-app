@@ -8,6 +8,7 @@
     $coachKelompok = $coachKelompok ?? (Auth::user()->kelompok ?? 'Learn To Swim');
     $isChampions   = $isChampions ?? ($coachKelompok === 'Champions');
     $todayCarbon   = \Carbon\Carbon::now('Asia/Jakarta')->startOfDay();
+    $logoUrl       = asset('images/logo-tbsc.jpeg');
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -16,6 +17,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Tirta Bima — Dashboard Pelatih</title>
+    <link rel="icon" type="image/jpeg" href="{{ $logoUrl }}">
 
     <!-- Tailwind CSS & Font Awesome -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,19 +28,26 @@
 </head>
 <body class="bg-slate-100 min-h-screen font-sans antialiased text-slate-800 flex flex-col md:flex-row">
 
-    <!-- SIDEBAR PELATIH (STICKY) -->
-    <aside class="w-full md:w-72 bg-[#0b2447] text-white flex flex-col justify-between shrink-0 md:h-screen md:sticky md:top-0 overflow-y-auto shadow-xl z-20">
+    <!-- OVERLAY MOBILE -->
+    <div id="pelatih-sidebar-overlay" onclick="togglePelatihSidebar(false)"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-30 hidden md:hidden"></div>
+
+    <!-- SIDEBAR PELATIH (DRAWER DI HP, STICKY DI DESKTOP) -->
+    <aside id="pelatih-sidebar"
+        class="fixed inset-y-0 left-0 w-72 bg-[#0b2447] text-white flex flex-col justify-between shrink-0 h-screen overflow-y-auto shadow-xl z-40 transform -translate-x-full transition-transform duration-200 md:translate-x-0 md:sticky md:top-0 md:z-20">
         <div>
-            <div class="p-6 border-b border-slate-700/60">
+            <div class="p-6 border-b border-slate-700/60 flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                    <svg class="w-7 h-7 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
+                    <img src="{{ $logoUrl }}" alt="Logo Tirta Bima"
+                        class="w-10 h-10 rounded-xl object-contain bg-white p-1 shrink-0 shadow-sm">
                     <div>
                         <span class="text-base font-bold tracking-wide block leading-tight">Tirta Bima</span>
                         <span class="text-[10px] uppercase font-semibold text-sky-400 tracking-wider">Swimming Club</span>
                     </div>
                 </div>
+                <button type="button" onclick="togglePelatihSidebar(false)" class="md:hidden text-slate-300 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
 
             <!-- Profil User -->
@@ -101,13 +110,19 @@
 
     <!-- KONTEN UTAMA PELATIH -->
     <div class="flex-1 flex flex-col min-h-screen min-w-0">
-        <header class="bg-white border-b border-slate-200 px-6 lg:px-8 py-4 flex items-center justify-between sticky top-0 z-10">
-            <div>
-                <h1 id="page-title" class="text-lg font-bold text-slate-900">Beranda Pelatih</h1>
-                <p id="page-subtitle" class="text-xs text-slate-500">Monitoring atlet bimbingan & jadwal sesi renang</p>
+        <header class="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between sticky top-0 z-10 gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <button type="button" onclick="togglePelatihSidebar(true)"
+                    class="md:hidden shrink-0 w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="min-w-0">
+                    <h1 id="page-title" class="text-lg font-bold text-slate-900 truncate">Beranda Pelatih</h1>
+                    <p id="page-subtitle" class="text-xs text-slate-500 truncate">Monitoring atlet bimbingan & jadwal sesi renang</p>
+                </div>
             </div>
             <div onclick="bukaKalenderTanggal()" title="Klik untuk ganti tanggal & lihat riwayat"
-                class="relative cursor-pointer select-none flex items-center space-x-2 text-xs text-slate-600 bg-slate-50 hover:bg-sky-50 hover:border-sky-300 px-3.5 py-2 rounded-xl border border-slate-200 transition">
+                class="relative cursor-pointer select-none shrink-0 flex items-center space-x-2 text-xs text-slate-600 bg-slate-50 hover:bg-sky-50 hover:border-sky-300 px-3.5 py-2 rounded-xl border border-slate-200 transition">
                 <i class="fa-regular fa-calendar-check text-sky-600"></i>
                 <span class="font-semibold">{{ $formattedDate ?? date('d F Y') }}</span>
                 <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
@@ -118,7 +133,7 @@
             </div>
         </header>
 
-        <main class="p-6 lg:p-8 flex-1 space-y-6">
+        <main class="p-4 sm:p-6 lg:p-8 flex-1 space-y-6">
             <!-- TAB 1: BERANDA PELATIH -->
             <section id="tab-beranda" class="dashboard-panel space-y-6">
                 <div class="bg-[#0b2447] text-white rounded-3xl p-8 relative overflow-hidden shadow-lg">
@@ -137,12 +152,12 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                        <p class="text-[11px] font-semibold text-slate-500 uppercase">Total Data Atlet</p>
+                        <p class="text-[11px] font-semibold text-slate-500 uppercase">Total Data Atlet ({{ $coachKelompok }})</p>
                         <h3 class="text-2xl font-bold text-slate-900 mt-1">{{ ($dataAtlet ?? collect())->count() }} Atlet</h3>
                     </div>
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                         <p class="text-[11px] font-semibold text-slate-500 uppercase">
-                            {{ ($selectedDate ?? date('Y-m-d')) === date('Y-m-d') ? 'Hadir Hari Ini' : 'Hadir Hari ini' }}
+                            {{ ($selectedDate ?? date('Y-m-d')) === date('Y-m-d') ? 'Hadir Hari Ini' : 'Hadir (' . ($formattedDate ?? '') . ')' }}
                         </p>
                         <h3 id="stat-hadir-sore-ini" class="text-2xl font-bold text-emerald-600 mt-1">{{ $hadirHariIni ?? 0 }} Atlet</h3>
                     </div>
@@ -281,7 +296,7 @@
                 </div>
             </section>
 
-            <!-- TAB 4: DAFTAR EVENT (TEMA TERANG SESUAI DASHBOARD) -->
+            <!-- TAB 4: DAFTAR EVENT -->
             <section id="tab-event" class="dashboard-panel space-y-6 hidden">
                 <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
@@ -349,7 +364,7 @@
             </section>
 
             @if($isChampions)
-                <!-- TAB 5: PROGRAM LATIHAN (TEMA TERANG SESUAI DASHBOARD) -->
+                <!-- TAB 5: PROGRAM LATIHAN -->
                 <section id="tab-program-latihan" class="dashboard-panel space-y-6 hidden">
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div>
@@ -422,7 +437,7 @@
                     </div>
                 </section>
 
-                <!-- TAB 6: BEST TIME (KHUSUS CHAMPIONS) -->
+                <!-- TAB 6: BEST TIME -->
                 <section id="tab-best-time" class="dashboard-panel space-y-6 hidden">
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -610,14 +625,14 @@
     </div>
 
     @if($isChampions)
-        <!-- MODAL 3: TAMBAH EVENT (KHUSUS PELATIH CHAMPIONS) -->
+        <!-- MODAL 3: TAMBAH EVENT -->
         <div id="modal-event" onclick="if(event.target === this) closeModal('modal-event')" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
             <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 relative my-8">
                 <button type="button" onclick="closeModal('modal-event')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
                 <h3 class="text-base font-bold text-slate-900 mb-1">Tambah Event Kejuaraan</h3>
-                <p class="text-xs text-slate-500 mb-4">Jadwal event akan tampil di dashboard seluruh pelatih dan admin</p>
+                <p class="text-xs text-slate-500 mb-4">Jadwal event akan tampil di dashboard seluruh pelatih, murid, dan admin</p>
 
                 <form id="form-event" onsubmit="handleSimpanEvent(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
                     <div class="sm:col-span-2">
