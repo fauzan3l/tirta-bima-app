@@ -178,50 +178,71 @@ async function startCameraScanner() {
     }
 
     if (isScanning) return;
-    if (statusEl) statusEl.textContent = 'Menyalakan kamera belakang...';
+    if (statusEl) statusEl.textContent = 'Menyalakan kamera...';
 
     try {
         if (html5QrCode) {
             try {
+                if (html5QrCode.isScanning) {
+                    await html5QrCode.stop();
+                }
                 await html5QrCode.clear();
             } catch (e) {}
+            html5QrCode = null;
         }
+
         html5QrCode = new Html5Qrcode('qr-reader');
 
-        const config = { fps: 10, qrbox: { width: 220, height: 220 } };
-        const onScanSuccess = (decodedText) => {
-            if (!isScanning) return;
-            stopCameraScanner().then(() => {
-                prosesScanToken(decodedText.trim());
-            });
+        const cameraConfig = {
+            facingMode: 'environment'
         };
 
-        try {
-            await html5QrCode.start({ facingMode: { exact: 'environment' } }, config, onScanSuccess, () => {});
-        } catch (exactErr) {
-            await html5QrCode.start({ facingMode: 'environment' }, config, onScanSuccess, () => {});
-        }
+        const qrConfig = {
+            fps: 10,
+            qrbox: { width: 220, height: 220 },
+            videoConstraints: {
+                facingMode: 'environment',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            }
+        };
+
+        await html5QrCode.start(
+            cameraConfig,
+            qrConfig,
+            (decodedText) => {
+                if (!isScanning) return;
+                stopCameraScanner().then(() => {
+                    prosesScanToken(decodedText.trim());
+                });
+            },
+            () => {}
+        );
 
         isScanning = true;
-        if (statusEl) statusEl.textContent = 'Kamera belakang aktif. Arahkan QR / Barcode ke kotak scan.';
+        if (statusEl) statusEl.textContent = 'Kamera aktif. Arahkan QR / Barcode ke kotak scan.';
     } catch (err) {
         isScanning = false;
         const msg = err && err.message ? err.message : String(err);
         if (statusEl) {
-            statusEl.textContent = 'Kamera tidak dapat diakses (' + msg + '). Pastikan izin kamera diaktifkan atau gunakan input manual di bawah.';
+            statusEl.textContent = 'Kamera tidak dapat diakses (' + msg + '). Tutup aplikasi kamera lain / restart Chrome, atau gunakan input token manual di bawah.';
         }
     }
 }
 
 async function stopCameraScanner() {
     const statusEl = document.getElementById('camera-status');
-    if (html5QrCode && isScanning) {
+    if (html5QrCode) {
+        const wasScanning = isScanning || html5QrCode.isScanning;
         isScanning = false;
         try {
-            await html5QrCode.stop();
+            if (wasScanning) {
+                await html5QrCode.stop();
+            }
             await html5QrCode.clear();
-            if (statusEl) statusEl.textContent = 'Kamera dimatikan. Tekan "Nyalakan Kamera" untuk mulai scan.';
         } catch (e) {}
+        html5QrCode = null;
+        if (statusEl) statusEl.textContent = 'Kamera dimatikan. Tekan "Nyalakan Kamera" untuk mulai scan.';
     }
 }
 
