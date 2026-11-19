@@ -169,7 +169,19 @@
 
                     <div class="mb-4">
                         <div id="qr-reader" class="w-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 min-h-[260px]"></div>
-                        <p id="camera-status" class="text-xs text-slate-500 mt-2 text-center">Menyalakan kamera...</p>
+                        <p id="camera-status" class="text-xs text-slate-500 mt-2 text-center">Tekan tombol di bawah untuk menyalakan kamera.</p>
+                        <div class="flex items-center justify-center gap-2 mt-3">
+                            <button type="button" onclick="startCameraScanner()"
+                                class="inline-flex items-center space-x-1.5 bg-[#0275d8] hover:bg-sky-600 text-white text-xs font-semibold px-4 py-2 rounded-xl transition shadow-sm">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>Nyalakan Kamera</span>
+                            </button>
+                            <button type="button" onclick="stopCameraScanner()"
+                                class="inline-flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-xl transition">
+                                <i class="fa-solid fa-stop"></i>
+                                <span>Matikan</span>
+                            </button>
+                        </div>
                     </div>
 
                     <form onsubmit="handleAdminScanBarcode(event)" class="space-y-3 text-xs border-t border-slate-100 pt-4">

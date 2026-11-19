@@ -79,13 +79,14 @@ function switchAdminTab(target) {
         subtitle.textContent = adminTabInfo[target].subtitle;
     }
 
+    // Tutup sidebar & overlay dulu sebelum menyalakan kamera
+    toggleAdminSidebar(false);
+
     if (target === 'scan-qr') {
-        startCameraScanner();
+        setTimeout(() => startCameraScanner(), 300);
     } else {
         stopCameraScanner();
     }
-
-    toggleAdminSidebar(false);
 }
 
 function bukaKalenderAdmin() {
@@ -182,10 +183,12 @@ function startCameraScanner() {
 }
 
 function stopCameraScanner() {
+    const statusEl = document.getElementById('camera-status');
     if (html5QrCode && isScanning) {
         isScanning = false;
         html5QrCode.stop().then(() => {
             html5QrCode.clear();
+            if (statusEl) statusEl.textContent = 'Kamera dimatikan. Tekan "Nyalakan Kamera" untuk mulai scan.';
         }).catch(() => {});
     }
 }
